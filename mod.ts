@@ -5,6 +5,7 @@
 // This module is browser compatible.
 
 import { globrex } from "./_globrex.ts";
+import { nativeOs } from "./_util.ts";
 
 export interface GlobToRegExpOptions {
   /** Extended glob syntax.
@@ -15,16 +16,19 @@ export interface GlobToRegExpOptions {
    * See https://www.linuxjournal.com/content/globstar-new-bash-globbing-option.
    * If false, `**` is treated like `*`. Defaults to true. */
   globstar?: boolean;
+  /** Operating system. Defaults to the native OS. */
+  os?: typeof Deno.build.os;
 }
 
 /** Convert a glob string to a regular expressions. */
 export function globToRegExp(
   glob: string,
-  { extended = true, globstar = true }: GlobToRegExpOptions = {},
+  { extended = true, globstar = true, os }: GlobToRegExpOptions = {},
 ): RegExp {
   const result = globrex(glob, {
     extended,
     globstar,
+    os: os ?? nativeOs,
     strict: false,
     filepath: true,
   });

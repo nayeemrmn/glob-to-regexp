@@ -2,29 +2,35 @@
 // https://github.com/denoland/deno/blob/v1.2.2/std/path/_globrex_test.ts.
 // Copyright 2018 Terkel Gjervig Nielsen. All rights reserved. MIT license.
 // Copyright 2018-2020 the Deno authors. All rights reserved. MIT license.
+// Copyright 2020 Nayeem Rahman. All rights reserved. MIT license.
 
 import { GlobrexOptions, globrex } from "./_globrex.ts";
 import { assertEquals } from "./dev_deps.ts";
 
-const isWin = Deno.build.os === "windows";
 const t = { equal: assertEquals, is: assertEquals };
 
 function match(
   glob: string,
   strUnix: string,
   strWin?: string | object,
-  opts: GlobrexOptions = {},
+  opts: Omit<GlobrexOptions, "os"> = {},
 ): boolean {
   if (typeof strWin === "object") {
     opts = strWin;
     strWin = "";
   }
-  const { regex } = globrex(glob, opts);
-  const match = (isWin && strWin ? strWin : strUnix).match(regex);
+  strWin = strWin || strUnix;
+  const { regex } = globrex(glob, { ...opts, os: "linux" });
+  const match = strUnix.match(regex);
   if (match && !regex.flags.includes("g")) {
     assertEquals(match.length, 1);
   }
-  return !!match;
+  const { regex: regexWin } = globrex(glob, { ...opts, os: "windows" });
+  const matchWin = strWin.match(regexWin);
+  if (matchWin && !regexWin.flags.includes("g")) {
+    assertEquals(matchWin.length, 1);
+  }
+  return !!match && !!matchWin;
 }
 
 Deno.test({

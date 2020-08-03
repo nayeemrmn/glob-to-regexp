@@ -5,14 +5,7 @@
 // Copyright 2020 Nayeem Rahman. All rights reserved. MIT license.
 // This module is browser compatible.
 
-const isWin = (globalThis?.Deno?.build?.os ?? "linux") == "windows";
-const SEP = isWin ? `(?:\\\\|\\/)` : `\\/`;
-const SEP_ESC = isWin ? `\\\\` : `/`;
-const SEP_RAW = isWin ? `\\` : `/`;
-const GLOBSTAR = `(?:(?:[^${SEP_ESC}/]*(?:${SEP_ESC}|\/|$))*)`;
-const WILDCARD = `(?:[^${SEP_ESC}/]*)`;
-const GLOBSTAR_SEGMENT = `((?:[^${SEP_ESC}/]*(?:${SEP_ESC}|\/|$))*)`;
-const WILDCARD_SEGMENT = `(?:[^${SEP_ESC}/]*)`;
+import { nativeOs } from "./_util.ts";
 
 export interface GlobrexOptions {
   /** Allow ExtGlob features.
@@ -25,6 +18,10 @@ export interface GlobrexOptions {
    * using wildcards in bash.
    * @default false */
   globstar?: boolean;
+  /** Operating system.
+   * @remarks When `"windows"`, `"\\"` is also a valid path separator. Defaults
+   * to the native OS. */
+  os?: typeof Deno.build.os;
   /** Be laissez-faire about mutiple slashes.
    * @default true */
   strict?: boolean;
@@ -55,11 +52,21 @@ export function globrex(
   {
     extended = false,
     globstar = false,
+    os: os_,
     strict = false,
     filepath = false,
     flags = "",
   }: GlobrexOptions = {},
 ): GlobrexResult {
+  const os = os_ ?? nativeOs;
+  const SEP = os == "windows" ? `(?:\\\\|\\/)` : `\\/`;
+  const SEP_ESC = os == "windows" ? `\\\\` : `/`;
+  const SEP_RAW = os == "windows" ? `\\` : `/`;
+  const GLOBSTAR = `(?:(?:[^${SEP_ESC}/]*(?:${SEP_ESC}|\/|$))*)`;
+  const WILDCARD = `(?:[^${SEP_ESC}/]*)`;
+  const GLOBSTAR_SEGMENT = `((?:[^${SEP_ESC}/]*(?:${SEP_ESC}|\/|$))*)`;
+  const WILDCARD_SEGMENT = `(?:[^${SEP_ESC}/]*)`;
+
   const sepPattern = new RegExp(`^${SEP}${strict ? "" : "+"}$`);
   let regex = "";
   let segment = "";

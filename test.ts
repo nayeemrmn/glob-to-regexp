@@ -31,3 +31,16 @@ Deno.test({
     assertEquals("path-to/foo".match(pattern2)?.[0], "path-to/foo");
   },
 });
+
+Deno.test({
+  name: "GlobToRegExpOptions::os",
+  fn() {
+    const pattern1 = globToRegExp("foo/bar", { os: "linux" });
+    assertEquals("foo/bar".match(pattern1)?.[0], "foo/bar");
+    assertEquals("foo\\bar".match(pattern1)?.[0], undefined);
+
+    const pattern2 = globToRegExp("foo/bar", { os: "windows" });
+    assertEquals("foo/bar".match(pattern2)?.[0], "foo/bar");
+    assertEquals("foo\\bar".match(pattern2)?.[0], "foo\\bar");
+  },
+});
