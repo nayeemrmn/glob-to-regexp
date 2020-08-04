@@ -23,11 +23,11 @@ export interface GlobToRegExpOptions {
 /** Convert a glob string to a regular expressions. */
 export function globToRegExp(
   glob: string,
-  { extended = true, globstar = true, os }: GlobToRegExpOptions = {},
+  { extended = true, globstar = true, os = nativeOs }: GlobToRegExpOptions = {},
 ): RegExp {
   return globrex(glob, {
     extended,
     globstar,
-    os: os ?? nativeOs,
+    os,
   });
 }
