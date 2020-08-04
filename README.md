@@ -5,7 +5,7 @@ Convert glob strings to regular expressions.
 ## Usage
 
 ```ts
-import { globToRegExp } from "https://raw.githubusercontent.com/nayeemrmn/glob-to-regexp/v0.2.0/mod.ts";
+import { globToRegExp } from "https://raw.githubusercontent.com/nayeemrmn/glob-to-regexp/v0.2.1/mod.ts";
 
 const pattern1 = globToRegExp("**/?(foo|bar)");
 console.log("foo".match(pattern1) != null); // true
