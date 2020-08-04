@@ -25,15 +25,9 @@ export function globToRegExp(
   glob: string,
   { extended = true, globstar = true, os }: GlobToRegExpOptions = {},
 ): RegExp {
-  const result = globrex(glob, {
+  return globrex(glob, {
     extended,
     globstar,
     os: os ?? nativeOs,
-    strict: false,
-    filepath: true,
   });
-  if (result.path == null) {
-    throw new Error(`Assertion failure: "result.path != null"`);
-  }
-  return result.path.regex;
 }

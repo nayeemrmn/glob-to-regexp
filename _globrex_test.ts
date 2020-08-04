@@ -12,7 +12,7 @@ const t = { equal: assertEquals, is: assertEquals };
 function match(
   glob: string,
   strUnix: string,
-  strWin?: string | object,
+  strWin?: string | Omit<GlobrexOptions, "os">,
   opts: Omit<GlobrexOptions, "os"> = {},
 ): boolean {
   if (typeof strWin === "object") {
@@ -20,14 +20,14 @@ function match(
     strWin = "";
   }
   strWin = strWin || strUnix;
-  const { regex } = globrex(glob, { ...opts, os: "linux" });
+  const regex = globrex(glob, { ...opts, os: "linux" });
   const match = strUnix.match(regex);
-  if (match && !regex.flags.includes("g")) {
+  if (match) {
     assertEquals(match.length, 1);
   }
-  const { regex: regexWin } = globrex(glob, { ...opts, os: "windows" });
+  const regexWin = globrex(glob, { ...opts, os: "windows" });
   const matchWin = strWin.match(regexWin);
-  if (matchWin && !regexWin.flags.includes("g")) {
+  if (matchWin) {
     assertEquals(matchWin.length, 1);
   }
   return !!match && !!matchWin;
@@ -36,10 +36,8 @@ function match(
 Deno.test({
   name: "globrex: standard",
   fn(): void {
-    const res = globrex("*.js");
-    t.equal(typeof globrex, "function", "constructor is a typeof function");
-    t.equal(res instanceof Object, true, "returns object");
-    t.equal(res.regex.toString(), "/^.*\\.js$/", "returns regex object");
+    const regex = globrex("*.js");
+    t.equal(regex.toString(), "/^.*\\.js$/", "returns regex object");
   },
 });
 
@@ -47,139 +45,19 @@ Deno.test({
   name: "globrex: Standard * matching",
   fn(): void {
     t.equal(match("*", "foo"), true, "match everything");
-    t.equal(match("*", "foo", { flags: "g" }), true, "match everything");
+    t.equal(match("*", "foo"), true, "match everything");
     t.equal(match("f*", "foo"), true, "match the end");
-    t.equal(match("f*", "foo", { flags: "g" }), true, "match the end");
+    t.equal(match("f*", "foo"), true, "match the end");
     t.equal(match("*o", "foo"), true, "match the start");
-    t.equal(match("*o", "foo", { flags: "g" }), true, "match the start");
+    t.equal(match("*o", "foo"), true, "match the start");
     t.equal(match("u*orn", "unicorn"), true, "match the middle");
-    t.equal(
-      match("u*orn", "unicorn", { flags: "g" }),
-      true,
-      "match the middle",
-    );
-    t.equal(match("ico", "unicorn"), false, "do not match without g");
-    t.equal(
-      match("ico", "unicorn", { flags: "g" }),
-      true,
-      'match anywhere with RegExp "g"',
-    );
+    t.equal(match("u*orn", "unicorn"), true, "match the middle");
+    t.equal(match("ico", "unicorn"), false, "do not match without start/end");
     t.equal(match("u*nicorn", "unicorn"), true, "match zero characters");
     t.equal(
-      match("u*nicorn", "unicorn", { flags: "g" }),
+      match("u*nicorn", "unicorn"),
       true,
       "match zero characters",
-    );
-  },
-});
-
-Deno.test({
-  name: "globrex: advance * matching",
-  fn(): void {
-    t.equal(
-      match("*.min.js", "http://example.com/jquery.min.js", {
-        globstar: false,
-      }),
-      true,
-      "complex match",
-    );
-    t.equal(
-      match("*.min.*", "http://example.com/jquery.min.js", { globstar: false }),
-      true,
-      "complex match",
-    );
-    t.equal(
-      match("*/js/*.js", "http://example.com/js/jquery.min.js", {
-        globstar: false,
-      }),
-      true,
-      "complex match",
-    );
-    t.equal(
-      match("*.min.*", "http://example.com/jquery.min.js", { flags: "g" }),
-      true,
-      "complex match global",
-    );
-    t.equal(
-      match("*.min.js", "http://example.com/jquery.min.js", { flags: "g" }),
-      true,
-      "complex match global",
-    );
-    t.equal(
-      match("*/js/*.js", "http://example.com/js/jquery.min.js", { flags: "g" }),
-      true,
-      "complex match global",
-    );
-
-    const str = "\\/$^+?.()=!|{},[].*";
-    t.equal(match(str, str), true, "battle test complex string - strict");
-    t.equal(
-      match(str, str, { flags: "g" }),
-      true,
-      "battle test complex string - strict",
-    );
-
-    t.equal(
-      match(".min.", "http://example.com/jquery.min.js"),
-      false,
-      'matches without/with using RegExp "g"',
-    );
-    t.equal(
-      match("*.min.*", "http://example.com/jquery.min.js"),
-      true,
-      'matches without/with using RegExp "g"',
-    );
-    t.equal(
-      match(".min.", "http://example.com/jquery.min.js", { flags: "g" }),
-      true,
-      'matches without/with using RegExp "g"',
-    );
-    t.equal(
-      match("http:", "http://example.com/jquery.min.js"),
-      false,
-      'matches without/with using RegExp "g"',
-    );
-    t.equal(
-      match("http:*", "http://example.com/jquery.min.js"),
-      true,
-      'matches without/with using RegExp "g"',
-    );
-    t.equal(
-      match("http:", "http://example.com/jquery.min.js", { flags: "g" }),
-      true,
-      'matches without/with using RegExp "g"',
-    );
-    t.equal(
-      match("min.js", "http://example.com/jquery.min.js"),
-      false,
-      'matches without/with using RegExp "g"',
-    );
-    t.equal(
-      match("*.min.js", "http://example.com/jquery.min.js"),
-      true,
-      'matches without/with using RegExp "g"',
-    );
-    t.equal(
-      match("min.js", "http://example.com/jquery.min.js", { flags: "g" }),
-      true,
-      'matches without/with using RegExp "g"',
-    );
-    t.equal(
-      match("min", "http://example.com/jquery.min.js", { flags: "g" }),
-      true,
-      'match anywhere (globally) using RegExp "g"',
-    );
-    t.equal(
-      match("/js/", "http://example.com/js/jquery.min.js", { flags: "g" }),
-      true,
-      'match anywhere (globally) using RegExp "g"',
-    );
-    t.equal(match("/js*jq*.js", "http://example.com/js/jquery.min.js"), false);
-    t.equal(
-      match("/js*jq*.js", "http://example.com/js/jquery.min.js", {
-        flags: "g",
-      }),
-      true,
     );
   },
 });
@@ -192,31 +70,13 @@ Deno.test({
     t.equal(match("f?oo", "foo", { extended: true }), false);
 
     const tester = (globstar: boolean): void => {
-      t.equal(
-        match("f?o", "foo", { extended: true, globstar, flags: "g" }),
-        true,
-      );
-      t.equal(
-        match("f?o", "fooo", { extended: true, globstar, flags: "g" }),
-        true,
-      );
-      t.equal(
-        match("f?o?", "fooo", { extended: true, globstar, flags: "g" }),
-        true,
-      );
+      t.equal(match("f?o", "foo", { extended: true, globstar }), true);
+      t.equal(match("f?o?", "fooo", { extended: true, globstar }), true);
 
-      t.equal(
-        match("?fo", "fooo", { extended: true, globstar, flags: "g" }),
-        false,
-      );
-      t.equal(
-        match("f?oo", "foo", { extended: true, globstar, flags: "g" }),
-        false,
-      );
-      t.equal(
-        match("foo?", "foo", { extended: true, globstar, flags: "g" }),
-        false,
-      );
+      t.equal(match("f?o", "fooo", { extended: true, globstar }), false);
+      t.equal(match("?fo", "fooo", { extended: true, globstar }), false);
+      t.equal(match("f?oo", "foo", { extended: true, globstar }), false);
+      t.equal(match("foo?", "foo", { extended: true, globstar }), false);
     };
 
     tester(true);
@@ -236,18 +96,9 @@ Deno.test({
     t.equal(match("fo[!tz]", "fob", { extended: true }), true);
 
     const tester = (globstar: boolean): void => {
-      t.equal(
-        match("fo[oz]", "foo", { extended: true, globstar, flags: "g" }),
-        true,
-      );
-      t.equal(
-        match("fo[oz]", "foz", { extended: true, globstar, flags: "g" }),
-        true,
-      );
-      t.equal(
-        match("fo[oz]", "fog", { extended: true, globstar, flags: "g" }),
-        false,
-      );
+      t.equal(match("fo[oz]", "foo", { extended: true, globstar }), true);
+      t.equal(match("fo[oz]", "foz", { extended: true, globstar }), true);
+      t.equal(match("fo[oz]", "fog", { extended: true, globstar }), false);
     };
 
     tester(true);
@@ -323,35 +174,19 @@ Deno.test({
 
     const tester = (globstar: boolean): void => {
       t.equal(
-        match("foo{bar,baaz}", "foobaaz", {
-          extended: true,
-          globstar,
-          flag: "g",
-        }),
+        match("foo{bar,baaz}", "foobaaz", { extended: true, globstar }),
         true,
       );
       t.equal(
-        match("foo{bar,baaz}", "foobar", {
-          extended: true,
-          globstar,
-          flag: "g",
-        }),
+        match("foo{bar,baaz}", "foobar", { extended: true, globstar }),
         true,
       );
       t.equal(
-        match("foo{bar,baaz}", "foobuzz", {
-          extended: true,
-          globstar,
-          flag: "g",
-        }),
+        match("foo{bar,baaz}", "foobuzz", { extended: true, globstar }),
         false,
       );
       t.equal(
-        match("foo{bar,b*z}", "foobuzz", {
-          extended: true,
-          globstar,
-          flag: "g",
-        }),
+        match("foo{bar,b*z}", "foobuzz", { extended: true, globstar }),
         true,
       );
     };
@@ -410,7 +245,7 @@ Deno.test({
         match(
           "http://?o[oz].b*z.com/{*.js,*.html}",
           "http://foo.baaz.com/jquery.min.js",
-          { extended: true, globstar, flags: "g" },
+          { extended: true, globstar },
         ),
         true,
       );
@@ -418,7 +253,7 @@ Deno.test({
         match(
           "http://?o[oz].b*z.com/{*.js,*.html}",
           "http://moz.buzz.com/index.html",
-          { extended: true, globstar, flags: "g" },
+          { extended: true, globstar },
         ),
         true,
       );
@@ -426,7 +261,7 @@ Deno.test({
         match(
           "http://?o[oz].b*z.com/{*.js,*.html}",
           "http://moz.buzz.com/index.htm",
-          { extended: true, globstar, flags: "g" },
+          { extended: true, globstar },
         ),
         false,
       );
@@ -434,7 +269,7 @@ Deno.test({
         match(
           "http://?o[oz].b*z.com/{*.js,*.html}",
           "http://moz.bar.com/index.html",
-          { extended: true, globstar, flags: "g" },
+          { extended: true, globstar },
         ),
         false,
       );
@@ -442,7 +277,7 @@ Deno.test({
         match(
           "http://?o[oz].b*z.com/{*.js,*.html}",
           "http://flozz.buzz.com/index.html",
-          { extended: true, globstar, flags: "g" },
+          { extended: true, globstar },
         ),
         false,
       );
@@ -461,7 +296,7 @@ Deno.test({
         match(
           "http://foo.com/**/{*.js,*.html}",
           "http://foo.com/bar/jquery.min.js",
-          { extended: true, globstar, flags: "g" },
+          { extended: true, globstar },
         ),
         true,
       );
@@ -469,7 +304,7 @@ Deno.test({
         match(
           "http://foo.com/**/{*.js,*.html}",
           "http://foo.com/bar/baz/jquery.min.js",
-          { extended: true, globstar, flags: "g" },
+          { extended: true, globstar },
         ),
         true,
       );
@@ -477,7 +312,6 @@ Deno.test({
         match("http://foo.com/**", "http://foo.com/bar/baz/jquery.min.js", {
           extended: true,
           globstar,
-          flags: "g",
         }),
         true,
       );
@@ -495,7 +329,7 @@ Deno.test({
       const testExtStr = "\\/$^+.()=!|,.*";
       t.equal(match(testExtStr, testExtStr, { extended: true }), true);
       t.equal(
-        match(testExtStr, testExtStr, { extended: true, globstar, flags: "g" }),
+        match(testExtStr, testExtStr, { extended: true, globstar }),
         true,
       );
     };
@@ -578,10 +412,11 @@ Deno.test({
     );
     t.equal(match("*/*.txt", "foo.txt", { globstar: true }), false);
     t.equal(
-      match("http://foo.com/*", "http://foo.com/bar/baz/jquery.min.js", {
-        extended: true,
-        globstar: true,
-      }),
+      match(
+        "http://foo.com/*",
+        "http://foo.com/bar/baz/jquery.min.js",
+        { extended: true, globstar: true },
+      ),
       false,
     );
     t.equal(
@@ -780,15 +615,6 @@ Deno.test({
       match("!({foo,bar})baz.txt", "foobaz.txt", { extended: true }),
       false,
     );
-  },
-});
-
-Deno.test({
-  name: "globrex: strict",
-  fn(): void {
-    t.equal(match("foo//bar.txt", "foo/bar.txt"), true);
-    t.equal(match("foo///bar.txt", "foo/bar.txt"), true);
-    t.equal(match("foo///bar.txt", "foo/bar.txt", { strict: true }), false);
   },
 });
 

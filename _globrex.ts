@@ -22,56 +22,26 @@ export interface GlobrexOptions {
    * @remarks When `"windows"`, `"\\"` is also a valid path separator. Defaults
    * to the native OS. */
   os?: typeof Deno.build.os;
-  /** Be laissez-faire about mutiple slashes.
-   * @default true */
-  strict?: boolean;
-  /** Parse as filepath for extra path related features.
-   * @default false */
-  filepath?: boolean;
-  /** Flag to use in the generated RegExp. */
-  flags?: string;
 }
 
-export interface GlobrexResult {
-  regex: RegExp;
-  path?: {
-    regex: RegExp;
-    segments: RegExp[];
-    globstar?: RegExp;
-  };
-}
-
-/**
- * Convert any glob pattern to a JavaScript Regexp object
- * @param glob Glob pattern to convert
- * @param opts Configuration object
- * @returns Converted object with string, segments and RegExp object
- */
+/** Convert any glob pattern to a JavaScript Regexp object. */
 export function globrex(
   glob: string,
   {
     extended = false,
     globstar = false,
     os: os_,
-    strict = false,
-    filepath = false,
-    flags = "",
   }: GlobrexOptions = {},
-): GlobrexResult {
+): RegExp {
   const os = os_ ?? nativeOs;
   const SEP = os == "windows" ? `(?:\\\\|\\/)` : `\\/`;
   const SEP_ESC = os == "windows" ? `\\\\` : `/`;
   const SEP_RAW = os == "windows" ? `\\` : `/`;
   const GLOBSTAR = `(?:(?:[^${SEP_ESC}/]*(?:${SEP_ESC}|\/|$))*)`;
   const WILDCARD = `(?:[^${SEP_ESC}/]*)`;
-  const GLOBSTAR_SEGMENT = `((?:[^${SEP_ESC}/]*(?:${SEP_ESC}|\/|$))*)`;
-  const WILDCARD_SEGMENT = `(?:[^${SEP_ESC}/]*)`;
 
-  const sepPattern = new RegExp(`^${SEP}${strict ? "" : "+"}$`);
-  let regex = "";
-  let segment = "";
+  const sepPattern = new RegExp(`^${SEP}+$`);
   let pathRegexStr = "";
-  const pathSegments = [];
 
   // If we are doing extended matching, this boolean is true when we are inside
   // a group (eg {*.html,*.js}), and false otherwise.
@@ -81,33 +51,9 @@ export function globrex(
   // extglob stack. Keep track of scope
   const ext = [];
 
-  interface AddOptions {
-    split?: boolean;
-    last?: boolean;
-    only?: string;
-  }
-
   // Helper function to build string and segments
-  function add(
-    str: string,
-    options: AddOptions = { split: false, last: false, only: "" },
-  ): void {
-    const { split, last, only } = options;
-    if (only !== "path") regex += str;
-    if (filepath && only !== "regex") {
-      pathRegexStr += str.match(sepPattern) ? SEP : str;
-      if (split) {
-        if (last) segment += str;
-        if (segment !== "") {
-          // change it 'includes'
-          if (!flags.includes("g")) segment = `^${segment}$`;
-          pathSegments.push(new RegExp(segment, flags));
-        }
-        segment = "";
-      } else {
-        segment += str;
-      }
-    }
+  function add(str: string): void {
+    pathRegexStr += str.match(sepPattern) ? SEP : str;
   }
 
   let c, n;
@@ -121,8 +67,7 @@ export function globrex(
     }
 
     if (c.match(sepPattern)) {
-      add(SEP, { split: true });
-      if (n != null && n.match(sepPattern) && !strict) regex += "?";
+      add(SEP);
       continue;
     }
 
@@ -294,13 +239,11 @@ export function globrex(
           [SEP_RAW, "/", undefined].includes(nextChar);
         if (isGlobstar) {
           // it's a globstar, so match zero or more path segments
-          add(GLOBSTAR, { only: "regex" });
-          add(GLOBSTAR_SEGMENT, { only: "path", last: true, split: true });
+          add(GLOBSTAR);
           i++; // move over the "/"
         } else {
           // it's not a globstar, so only match one path segment
-          add(WILDCARD, { only: "regex" });
-          add(WILDCARD_SEGMENT, { only: "path" });
+          add(WILDCARD);
         }
       }
       continue;
@@ -309,28 +252,7 @@ export function globrex(
     add(c);
   }
 
-  // When regexp 'g' flag is specified don't
-  // constrain the regular expression with ^ & $
-  if (!flags.includes("g")) {
-    regex = `^${regex}$`;
-    segment = `^${segment}$`;
-    if (filepath) pathRegexStr = `^${pathRegexStr}$`;
-  }
+  pathRegexStr = `^${pathRegexStr}$`;
 
-  const result: GlobrexResult = { regex: new RegExp(regex, flags) };
-
-  // Push the last segment
-  if (filepath) {
-    pathSegments.push(new RegExp(segment, flags));
-    result.path = {
-      regex: new RegExp(pathRegexStr, flags),
-      segments: pathSegments,
-      globstar: new RegExp(
-        !flags.includes("g") ? `^${GLOBSTAR_SEGMENT}$` : GLOBSTAR_SEGMENT,
-        flags,
-      ),
-    };
-  }
-
-  return result;
+  return new RegExp(pathRegexStr);
 }
