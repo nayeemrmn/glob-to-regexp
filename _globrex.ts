@@ -35,10 +35,11 @@ export function globrex(
 ): RegExp {
   const os = os_ ?? nativeOs;
   const SEP = os == "windows" ? `(?:\\\\|\\/)` : `\\/`;
-  const SEP_ESC = os == "windows" ? `\\\\` : `/`;
   const SEP_RAW = os == "windows" ? `\\` : `/`;
-  const GLOBSTAR = `(?:(?:[^${SEP_ESC}/]*(?:${SEP_ESC}|\/|$))*)`;
-  const WILDCARD = `(?:[^${SEP_ESC}/]*)`;
+  const GLOBSTAR = os == "windows"
+    ? `(?:(?:[^\\\\/]*(?:\\\\|\\/|$))*)`
+    : `(?:(?:[^/]*(?:\\/|$))*)`;
+  const WILDCARD = os == "windows" ? `(?:[^\\\\/]*)` : `(?:[^/]*)`;
 
   const sepPattern = new RegExp(`^${SEP}+$`);
   let pathRegexStr = "";

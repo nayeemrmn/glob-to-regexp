@@ -37,7 +37,7 @@ Deno.test({
   name: "globrex: standard",
   fn(): void {
     const regex = globrex("*.js");
-    t.equal(regex.toString(), "/^(?:[^//]*)\\.js$/");
+    t.equal(regex.toString(), "/^(?:[^/]*)\\.js$/");
   },
 });
 
