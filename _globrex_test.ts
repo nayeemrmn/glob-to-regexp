@@ -454,6 +454,18 @@ Deno.test({
 });
 
 Deno.test({
+  name: "globrex: backslashes on Windows",
+  fn() {
+    assert(match("foo/bar", "foo\\bar", { os: "windows" }));
+    assert(match("foo\\bar", "foo/bar", { os: "windows" }));
+    assert(match("foo\\bar", "foo\\bar", { os: "windows" }));
+    assert(match("**/bar", "foo\\bar", { os: "windows" }));
+    assert(match("**\\bar", "foo/bar", { os: "windows" }));
+    assert(match("**\\bar", "foo\\bar", { os: "windows" }));
+  },
+});
+
+Deno.test({
   name: "globrex: stress testing",
   fn(): void {
     assert(

@@ -52,14 +52,14 @@ export function globrex(
     c = glob[i];
     n = glob[i + 1];
 
-    if (["\\", "$", "^", ".", "="].includes(c)) {
-      regExpString += `\\${c}`;
-      continue;
-    }
-
     if (seps.includes(c)) {
       regExpString += sep;
       while (seps.includes(glob[i + 1])) i++;
+      continue;
+    }
+
+    if (["\\", "$", "^", ".", "="].includes(c)) {
+      regExpString += `\\${c}`;
       continue;
     }
 
