@@ -36,14 +36,14 @@ function match(
 }
 
 Deno.test({
-  name: "globrex: standard",
+  name: "[globrex] Basic RegExp",
   fn(): void {
     assertEquals(globrex("*.js"), /^[^/]*\.js$/);
   },
 });
 
 Deno.test({
-  name: "globrex: Standard * matching",
+  name: "[globrex] * (wildcard)",
   fn(): void {
     assert(match("*", "foo"));
     assert(match("*", "foo"));
@@ -60,7 +60,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: ? match one character, no more and no less",
+  name: "[globrex] ? (match one character)",
   fn(): void {
     assert(match("f?o", "foo", { extended: true }));
     assert(!match("f?o", "fooo", { extended: true }));
@@ -82,7 +82,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: [] match a character range",
+  name: "[globrex] [seq] (character range)",
   fn(): void {
     assert(match("fo[oz]", "foo", { extended: true }));
     assert(match("fo[oz]", "foz", { extended: true }));
@@ -104,7 +104,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: [] extended character ranges",
+  name: "[globrex] [[:alnum:]] (character class in range)",
   fn(): void {
     assert(match("[[:alnum:]]/bar.txt", "a/bar.txt", { extended: true }));
     assert(
@@ -135,7 +135,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: {} match a choice of different substrings",
+  name: "[globrex] {} (brace expansion)",
   fn(): void {
     assert(match("foo{bar,baaz}", "foobaaz", { extended: true }));
     assert(match("foo{bar,baaz}", "foobar", { extended: true }));
@@ -155,7 +155,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: complex extended matches",
+  name: "[globrex] Complex matches",
   fn(): void {
     assert(
       match(
@@ -237,54 +237,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: standard globstar",
-  fn(): void {
-    const tester = (globstar: boolean): void => {
-      assert(
-        match(
-          "http://foo.com/**/{*.js,*.html}",
-          "http://foo.com/bar/jquery.min.js",
-          { extended: true, globstar },
-        ),
-      );
-      assertEquals(
-        match(
-          "http://foo.com/**/{*.js,*.html}",
-          "http://foo.com/bar/baz/jquery.min.js",
-          { extended: true, globstar },
-        ),
-        globstar,
-      );
-      assertEquals(
-        match("http://foo.com/**", "http://foo.com/bar/baz/jquery.min.js", {
-          extended: true,
-          globstar,
-        }),
-        globstar,
-      );
-    };
-
-    tester(true);
-    tester(false);
-  },
-});
-
-Deno.test({
-  name: "globrex: remaining chars should match themself",
-  fn(): void {
-    const tester = (globstar: boolean): void => {
-      const testExtStr = "\\/$^+.()=!|,.*";
-      assert(match(testExtStr, testExtStr, { extended: true }));
-      assert(match(testExtStr, testExtStr, { extended: true, globstar }));
-    };
-
-    tester(true);
-    tester(false);
-  },
-});
-
-Deno.test({
-  name: "globrex: globstar advance testing",
+  name: "[globrex] ** (globstar)",
   fn(): void {
     assert(match("/foo/*", "/foo/bar.txt", { globstar: true }));
     assert(match("/foo/**", "/foo/bar.txt", { globstar: true }));
@@ -350,7 +303,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: extended extglob ?",
+  name: "[globrex] ?(pattern-list) (extended: match zero or one)",
   fn(): void {
     assert(match("(foo).txt", "(foo).txt", { extended: true }));
     assert(match("?(foo).txt", "foo.txt", { extended: true }));
@@ -375,7 +328,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: extended extglob *",
+  name: "[globrex] *(pattern-list) (extended: match zero or more)",
   fn(): void {
     assert(match("*(foo).txt", "foo.txt", { extended: true }));
     assert(match("*foo.txt", "bofoo.txt", { extended: true }));
@@ -409,7 +362,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: extended extglob +",
+  name: "[globrex] +(pattern-list) (extended: match 1 or more)",
   fn(): void {
     assert(match("+(foo).txt", "foo.txt", { extended: true }));
     assert(match("+foo.txt", "+foo.txt", { extended: true }));
@@ -419,7 +372,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: extended extglob @",
+  name: "[globrex] @(pattern-list) (extended: match one)",
   fn(): void {
     assert(match("@(foo).txt", "foo.txt", { extended: true }));
     assert(match("@foo.txt", "@foo.txt", { extended: true }));
@@ -431,7 +384,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: extended extglob !",
+  name: "[globrex] !(pattern-list) (extended: match any except)",
   fn(): void {
     assert(match("!(boo).txt", "foo.txt", { extended: true }));
     assert(match("!(foo|baz)bar.txt", "buzbar.txt", { extended: true }));
@@ -442,7 +395,21 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: repeating slashes",
+  name: "[globrex] Special extended characters should match themselves",
+  fn(): void {
+    const tester = (globstar: boolean): void => {
+      const testExtStr = "\\/$^+.()=!|,.*";
+      assert(match(testExtStr, testExtStr, { extended: true }));
+      assert(match(testExtStr, testExtStr, { extended: true, globstar }));
+    };
+
+    tester(true);
+    tester(false);
+  },
+});
+
+Deno.test({
+  name: "[globrex] Repeating slashes",
   fn() {
     assert(match("foo/bar", "foo//bar"));
     assert(match("foo//bar", "foo/bar"));
@@ -454,7 +421,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "globrex: backslashes on Windows",
+  name: "[globrex] Backslashes on Windows",
   fn() {
     assert(match("foo/bar", "foo\\bar", { os: "windows" }));
     assert(match("foo\\bar", "foo/bar", { os: "windows" }));
@@ -462,28 +429,5 @@ Deno.test({
     assert(match("**/bar", "foo\\bar", { os: "windows" }));
     assert(match("**\\bar", "foo/bar", { os: "windows" }));
     assert(match("**\\bar", "foo\\bar", { os: "windows" }));
-  },
-});
-
-Deno.test({
-  name: "globrex: stress testing",
-  fn(): void {
-    assert(
-      match("**/*/?yfile.{md,js,txt}", "foo/bar/baz/myfile.md", {
-        extended: true,
-        globstar: true,
-      }),
-    );
-    assert(
-      match("**/*/?yfile.{md,js,txt}", "foo/baz/myfile.md", { extended: true }),
-    );
-    assert(
-      match("**/*/?yfile.{md,js,txt}", "foo/baz/tyfile.js", { extended: true }),
-    );
-    assert(match("[[:digit:]_.]/file.js", "1/file.js", { extended: true }));
-    assert(match("[[:digit:]_.]/file.js", "2/file.js", { extended: true }));
-    assert(match("[[:digit:]_.]/file.js", "_/file.js", { extended: true }));
-    assert(match("[[:digit:]_.]/file.js", "./file.js", { extended: true }));
-    assert(!match("[[:digit:]_.]/file.js", "z/file.js", { extended: true }));
   },
 });
