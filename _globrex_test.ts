@@ -37,7 +37,7 @@ Deno.test({
   name: "globrex: standard",
   fn(): void {
     const regex = globrex("*.js");
-    t.equal(regex.toString(), "/^.*\\.js$/", "returns regex object");
+    t.equal(regex.toString(), "/^(?:[^//]*)\\.js$/");
   },
 });
 
@@ -306,14 +306,14 @@ Deno.test({
           "http://foo.com/bar/baz/jquery.min.js",
           { extended: true, globstar },
         ),
-        true,
+        globstar,
       );
       t.equal(
         match("http://foo.com/**", "http://foo.com/bar/baz/jquery.min.js", {
           extended: true,
           globstar,
         }),
-        true,
+        globstar,
       );
     };
 
@@ -415,7 +415,7 @@ Deno.test({
       match(
         "http://foo.com/*",
         "http://foo.com/bar/baz/jquery.min.js",
-        { extended: true, globstar: true },
+        { globstar: true },
       ),
       false,
     );
@@ -424,12 +424,6 @@ Deno.test({
         globstar: true,
       }),
       false,
-    );
-    t.equal(
-      match("http://foo.com/*", "http://foo.com/bar/baz/jquery.min.js", {
-        globstar: false,
-      }),
-      true,
     );
     t.equal(
       match("http://foo.com/**", "http://foo.com/bar/baz/jquery.min.js", {
@@ -439,33 +433,9 @@ Deno.test({
     );
     t.equal(
       match(
-        "http://foo.com/*/*/jquery.min.js",
-        "http://foo.com/bar/baz/jquery.min.js",
-        { globstar: true },
-      ),
-      true,
-    );
-    t.equal(
-      match(
         "http://foo.com/**/jquery.min.js",
         "http://foo.com/bar/baz/jquery.min.js",
         { globstar: true },
-      ),
-      true,
-    );
-    t.equal(
-      match(
-        "http://foo.com/*/*/jquery.min.js",
-        "http://foo.com/bar/baz/jquery.min.js",
-        { globstar: false },
-      ),
-      true,
-    );
-    t.equal(
-      match(
-        "http://foo.com/*/jquery.min.js",
-        "http://foo.com/bar/baz/jquery.min.js",
-        { globstar: false },
       ),
       true,
     );
@@ -624,6 +594,7 @@ Deno.test({
     t.equal(
       match("**/*/?yfile.{md,js,txt}", "foo/bar/baz/myfile.md", {
         extended: true,
+        globstar: true,
       }),
       true,
     );

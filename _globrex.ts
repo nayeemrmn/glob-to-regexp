@@ -227,24 +227,18 @@ export function globrex(
         i++;
       }
       const nextChar = glob[i + 1];
-      if (!globstar) {
-        // globstar is disabled, so treat any number of "*" as one
-        add(".*");
+      const isGlobstar = globstar && starCount > 1 &&
+        // from the start of the segment
+        [SEP_RAW, "/", undefined].includes(prevChar) &&
+        // to the end of the segment
+        [SEP_RAW, "/", undefined].includes(nextChar);
+      if (isGlobstar) {
+        // it's a globstar, so match zero or more path segments
+        add(GLOBSTAR);
+        i++; // move over the "/"
       } else {
-        // globstar is enabled, so determine if this is a globstar segment
-        const isGlobstar = starCount > 1 && // multiple "*"'s
-          // from the start of the segment
-          [SEP_RAW, "/", undefined].includes(prevChar) &&
-          // to the end of the segment
-          [SEP_RAW, "/", undefined].includes(nextChar);
-        if (isGlobstar) {
-          // it's a globstar, so match zero or more path segments
-          add(GLOBSTAR);
-          i++; // move over the "/"
-        } else {
-          // it's not a globstar, so only match one path segment
-          add(WILDCARD);
-        }
+        // it's not a globstar, so only match one path segment
+        add(WILDCARD);
       }
       continue;
     }

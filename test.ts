@@ -26,8 +26,7 @@ Deno.test({
 
     const pattern2 = globToRegExp("**/foo", { globstar: false });
     assertEquals("foo".match(pattern2)?.[0], undefined);
-    // FIXME(nayeemrmn): The wildcard shouldn't allow path separators.
-    // assertEquals("path/to/foo".match(pattern2)?.[0], undefined);
+    assertEquals("path/to/foo".match(pattern2)?.[0], undefined);
     assertEquals("path-to/foo".match(pattern2)?.[0], "path-to/foo");
   },
 });
