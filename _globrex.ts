@@ -29,13 +29,13 @@ export function globrex(
     os = nativeOs,
   }: GlobrexOptions = {},
 ): RegExp {
-  const sep = os == "windows" ? `(?:\\\\|\\/)` : `\\/`;
-  const sepPattern = new RegExp(`^${sep}+$`);
+  const sep = os == "windows" ? `(?:\\\\|\\/)+` : `\\/+`;
+  const seps = os == "windows" ? ["\\", "/"] : ["/"];
   const sepRaw = os == "windows" ? `\\` : `/`;
   const globstar = os == "windows"
-    ? `(?:(?:[^\\\\/]*(?:\\\\|\\/|$))*)`
-    : `(?:(?:[^/]*(?:\\/|$))*)`;
-  const wildcard = os == "windows" ? `(?:[^\\\\/]*)` : `(?:[^/]*)`;
+    ? `(?:[^\\\\/]*(?:\\\\|\\/|$)+)*`
+    : `(?:[^/]*(?:\\/|$)+)*`;
+  const wildcard = os == "windows" ? `[^\\\\/]*` : `[^/]*`;
 
   // Keep track of scope for extended syntaxes.
   const extStack = [];
@@ -57,8 +57,9 @@ export function globrex(
       continue;
     }
 
-    if (c.match(sepPattern)) {
+    if (seps.includes(c)) {
       regExpString += sep;
+      while (seps.includes(glob[i + 1])) i++;
       continue;
     }
 
@@ -226,7 +227,7 @@ export function globrex(
       if (isGlobstar) {
         // it's a globstar, so match zero or more path segments
         regExpString += globstar;
-        i++; // move over the "/"
+        while (seps.includes(glob[i + 1])) i++;
       } else {
         // it's not a globstar, so only match one path segment
         regExpString += wildcard;

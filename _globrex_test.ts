@@ -38,7 +38,7 @@ function match(
 Deno.test({
   name: "globrex: standard",
   fn(): void {
-    assertEquals(globrex("*.js"), /^(?:[^/]*)\.js$/);
+    assertEquals(globrex("*.js"), /^[^/]*\.js$/);
   },
 });
 
@@ -438,6 +438,18 @@ Deno.test({
     assert(match("!bar.txt", "!bar.txt", { extended: true }));
     assert(match("!({foo,bar})baz.txt", "notbaz.txt", { extended: true }));
     assert(!match("!({foo,bar})baz.txt", "foobaz.txt", { extended: true }));
+  },
+});
+
+Deno.test({
+  name: "globrex: repeating slashes",
+  fn() {
+    assert(match("foo/bar", "foo//bar"));
+    assert(match("foo//bar", "foo/bar"));
+    assert(match("foo//bar", "foo//bar"));
+    assert(match("**/bar", "foo//bar"));
+    assert(match("**//bar", "foo/bar"));
+    assert(match("**//bar", "foo//bar"));
   },
 });
 
