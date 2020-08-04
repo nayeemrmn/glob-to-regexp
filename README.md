@@ -11,10 +11,7 @@ const pattern1 = globToRegExp("**/?(foo|bar)");
 console.log("foo".match(pattern1) != null); // true
 console.log("path/to/bar".match(pattern1) != null); // true
 
-const pattern2 = globToRegExp("**/?(foo|bar)", {
-  extended: false,
-  globstar: false,
-});
+const pattern2 = globToRegExp("**/?(foo|bar)", { extended: false });
 console.log("foo".match(pattern2) != null); // false
 console.log("path/to/foo".match(pattern2) != null); // false
 console.log("**/?(foo|bar)".match(pattern2) != null); // true
