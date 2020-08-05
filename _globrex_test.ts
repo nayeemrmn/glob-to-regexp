@@ -38,7 +38,8 @@ function match(
 Deno.test({
   name: "[globrex] Basic RegExp",
   fn(): void {
-    assertEquals(globrex("*.js"), /^[^/]*\.js$/);
+    assertEquals(globrex(""), /^$/);
+    assertEquals(globrex("*.js", { os: "linux" }), /^[^/]*\.js\/*$/);
   },
 });
 
@@ -350,8 +351,8 @@ Deno.test({
 Deno.test({
   name: "[globrex] Special extended characters in range",
   fn(): void {
-    assertEquals(globrex("[?*+@!|]"), /^[?*+@!|]$/);
-    assertEquals(globrex("[!?*+@!|]"), /^[^?*+@!|]$/);
+    assertEquals(globrex("[?*+@!|]", { os: "linux" }), /^[?*+@!|]\/*$/);
+    assertEquals(globrex("[!?*+@!|]", { os: "linux" }), /^[^?*+@!|]\/*$/);
   },
 });
 
@@ -359,14 +360,14 @@ Deno.test({
   name: "[globrex] Special RegExp characters in range",
   fn(): void {
     // Excluding characters checked in the previous test.
-    assertEquals(globrex("[\\$^.=]"), /^[\\$^.=]$/);
-    assertEquals(globrex("[!\\$^.=]"), /^[^\\$^.=]$/);
-    assertEquals(globrex("[^^]"), /^[\^^]$/);
+    assertEquals(globrex("[\\$^.=]", { os: "linux" }), /^[\\$^.=]\/*$/);
+    assertEquals(globrex("[!\\$^.=]", { os: "linux" }), /^[^\\$^.=]\/*$/);
+    assertEquals(globrex("[^^]", { os: "linux" }), /^[\^^]\/*$/);
   },
 });
 
 Deno.test({
-  name: "[globrex] Repeating slashes",
+  name: "[globrex] Repeating separators",
   fn() {
     assert(match("foo/bar", "foo//bar"));
     assert(match("foo//bar", "foo/bar"));
@@ -374,6 +375,18 @@ Deno.test({
     assert(match("**/bar", "foo//bar"));
     assert(match("**//bar", "foo/bar"));
     assert(match("**//bar", "foo//bar"));
+  },
+});
+
+Deno.test({
+  name: "[globrex] Trailing separators",
+  fn() {
+    assert(match("foo", "foo/"));
+    assert(match("foo/", "foo"));
+    assert(match("foo/", "foo/"));
+    assert(match("**", "foo/"));
+    assert(match("**/", "foo"));
+    assert(match("**/", "foo/"));
   },
 });
 

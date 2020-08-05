@@ -30,6 +30,7 @@ export function globrex(
   }: GlobrexOptions = {},
 ): RegExp {
   const sep = os == "windows" ? `(?:\\\\|\\/)+` : `\\/+`;
+  const sepMaybe = os == "windows" ? `(?:\\\\|\\/)*` : `\\/*`;
   const seps = os == "windows" ? ["\\", "/"] : ["/"];
   const sepRaw = os == "windows" ? `\\` : `/`;
   const globstar = os == "windows"
@@ -46,6 +47,11 @@ export function globrex(
   let inRange = false;
 
   let regExpString = "";
+
+  // Remove trailing separators.
+  let newLength = glob.length;
+  for (; seps.includes(glob[newLength - 1]) && newLength > 0; newLength--);
+  glob = glob.slice(0, newLength);
 
   let c, n;
   for (let i = 0; i < glob.length; i++) {
@@ -229,6 +235,6 @@ export function globrex(
     regExpString += c;
   }
 
-  regExpString = `^${regExpString}$`;
+  regExpString = `^${regExpString}${regExpString != "" ? sepMaybe : ""}$`;
   return new RegExp(regExpString);
 }
