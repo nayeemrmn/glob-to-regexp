@@ -9,6 +9,6 @@ if (globalThis.Deno != null) {
 } else if (navigator?.appVersion?.includes?.("Win") ?? false) {
   nativeOs = "windows";
 }
-// TODO(nayeemrmn): Improve OS inferrence in browsers beyond Windows detection.
+// TODO(nayeemrmn): Improve OS detection in browsers beyond Windows.
 
 export { nativeOs };

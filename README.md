@@ -19,7 +19,7 @@ console.log("**/?(foo|bar)".match(pattern2) != null); // true
 
 ## Attribution
 
-The core of this module was originally ported from
+This module was originally ported from
 https://github.com/terkelg/globrex/tree/v0.1.2 to
 https://github.com/denoland/deno/blob/v1.2.2/std/path/_globrex.ts. I've brought
 it here to iterate on it a bit before potentially porting it to Rust (in a
