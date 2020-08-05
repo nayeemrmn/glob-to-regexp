@@ -58,6 +58,55 @@ export function globrex(
       continue;
     }
 
+    if (c == "[") {
+      if (inRange && n == ":") {
+        i++; // skip [
+        let value = "";
+        while (glob[++i] !== ":") value += glob[i];
+        if (value == "alnum") regExpString += "\\w\\d";
+        else if (value == "space") regExpString += "\\s";
+        else if (value == "digit") regExpString += "\\d";
+        i++; // skip last ]
+        continue;
+      }
+      inRange = true;
+      regExpString += c;
+      continue;
+    }
+
+    if (c == "]") {
+      inRange = false;
+      regExpString += c;
+      continue;
+    }
+
+    if (c == "!") {
+      if (inRange) {
+        if (glob[i - 1] == "[") {
+          regExpString += "^";
+          continue;
+        }
+      } else if (extended) {
+        if (n == "(") {
+          extStack.push(c);
+          regExpString += "(?!";
+          i++;
+          continue;
+        }
+        regExpString += `\\${c}`;
+        continue;
+      } else {
+        regExpString += `\\${c}`;
+        continue;
+      }
+    }
+
+    if (inRange) {
+      if (c == "\\" || c == "^" && glob[i - 1] == "[") regExpString += `\\${c}`;
+      else regExpString += c;
+      continue;
+    }
+
     if (["\\", "$", "^", ".", "="].includes(c)) {
       regExpString += `\\${c}`;
       continue;
@@ -114,24 +163,6 @@ export function globrex(
       }
     }
 
-    if (c == "!") {
-      if (inRange) {
-        regExpString += "^";
-        continue;
-      } else if (extended) {
-        if (n == "(") {
-          extStack.push(c);
-          regExpString += "(?!";
-          i++;
-          continue;
-        }
-        regExpString += `\\${c}`;
-        continue;
-      }
-      regExpString += `\\${c}`;
-      continue;
-    }
-
     if (c == "?") {
       if (extended) {
         if (n == "(") {
@@ -142,28 +173,6 @@ export function globrex(
         regExpString += ".";
         continue;
       }
-    }
-
-    if (c == "[") {
-      if (inRange && n == ":") {
-        i++; // skip [
-        let value = "";
-        while (glob[++i] !== ":") value += glob[i];
-        if (value == "alnum") regExpString += "\\w\\d";
-        else if (value == "space") regExpString += "\\s";
-        else if (value == "digit") regExpString += "\\d";
-        i++; // skip last ]
-        continue;
-      }
-      inRange = true;
-      regExpString += c;
-      continue;
-    }
-
-    if (c == "]") {
-      inRange = false;
-      regExpString += c;
-      continue;
     }
 
     if (c == "{") {

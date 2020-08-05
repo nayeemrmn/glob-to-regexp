@@ -341,9 +341,27 @@ Deno.test({
 Deno.test({
   name: "[globrex] Special extended characters should match themselves",
   fn(): void {
-    const testExtStr = "\\/$^+.()=!|,.*";
-    assert(match(testExtStr, testExtStr));
-    assert(match(testExtStr, testExtStr, { extended: false }));
+    const glob = "\\/$^+.()=!|,.*";
+    assert(match(glob, glob));
+    assert(match(glob, glob, { extended: false }));
+  },
+});
+
+Deno.test({
+  name: "[globrex] Special extended characters in range",
+  fn(): void {
+    assertEquals(globrex("[?*+@!|]"), /^[?*+@!|]$/);
+    assertEquals(globrex("[!?*+@!|]"), /^[^?*+@!|]$/);
+  },
+});
+
+Deno.test({
+  name: "[globrex] Special RegExp characters in range",
+  fn(): void {
+    // Excluding characters checked in the previous test.
+    assertEquals(globrex("[\\$^.=]"), /^[\\$^.=]$/);
+    assertEquals(globrex("[!\\$^.=]"), /^[^\\$^.=]$/);
+    assertEquals(globrex("[^^]"), /^[\^^]$/);
   },
 });
 
