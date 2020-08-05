@@ -50,7 +50,7 @@ export function globrex(
 
   // Remove trailing separators.
   let newLength = glob.length;
-  for (; seps.includes(glob[newLength - 1]) && newLength > 0; newLength--);
+  for (; newLength > 0 && seps.includes(glob[newLength - 1]); newLength--);
   glob = glob.slice(0, newLength);
 
   let c, n;
