@@ -24,8 +24,8 @@ export interface GlobrexOptions {
 export function globrex(
   glob: string,
   {
-    extended = false,
-    globstar: globstarOption = false,
+    extended = true,
+    globstar: globstarOption = true,
     os = nativeOs,
   }: GlobrexOptions = {},
 ): RegExp {
@@ -115,11 +115,10 @@ export function globrex(
     }
 
     if (c == "!") {
-      if (extended) {
-        if (inRange) {
-          regExpString += "^";
-          continue;
-        }
+      if (inRange) {
+        regExpString += "^";
+        continue;
+      } else if (extended) {
         if (n == "(") {
           extStack.push(c);
           regExpString += "(?!";
@@ -137,13 +136,12 @@ export function globrex(
       if (extended) {
         if (n == "(") {
           extStack.push(c);
-        } else {
-          regExpString += ".";
         }
         continue;
+      } else {
+        regExpString += ".";
+        continue;
       }
-      regExpString += `\\${c}`;
-      continue;
     }
 
     if (c == "[") {
@@ -151,48 +149,32 @@ export function globrex(
         i++; // skip [
         let value = "";
         while (glob[++i] !== ":") value += glob[i];
-        if (value == "alnum") regExpString += "(?:\\w|\\d)";
+        if (value == "alnum") regExpString += "\\w\\d";
         else if (value == "space") regExpString += "\\s";
         else if (value == "digit") regExpString += "\\d";
         i++; // skip last ]
         continue;
       }
-      if (extended) {
-        inRange = true;
-        regExpString += c;
-        continue;
-      }
-      regExpString += `\\${c}`;
+      inRange = true;
+      regExpString += c;
       continue;
     }
 
     if (c == "]") {
-      if (extended) {
-        inRange = false;
-        regExpString += c;
-        continue;
-      }
-      regExpString += `\\${c}`;
+      inRange = false;
+      regExpString += c;
       continue;
     }
 
     if (c == "{") {
-      if (extended) {
-        inGroup = true;
-        regExpString += "(?:";
-        continue;
-      }
-      regExpString += `\\${c}`;
+      inGroup = true;
+      regExpString += "(?:";
       continue;
     }
 
     if (c == "}") {
-      if (extended) {
-        inGroup = false;
-        regExpString += ")";
-        continue;
-      }
-      regExpString += `\\${c}`;
+      inGroup = false;
+      regExpString += ")";
       continue;
     }
 
