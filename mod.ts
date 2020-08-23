@@ -26,13 +26,12 @@ export function globToRegExp(
   { extended = true, globstar: globstarOption = true, os = nativeOs }:
     GlobToRegExpOptions = {},
 ): RegExp {
-  const sep = os == "windows" ? `(?:\\\\|\\/)+` : `\\/+`;
-  const sepMaybe = os == "windows" ? `(?:\\\\|\\/)*` : `\\/*`;
+  const sep = os == "windows" ? `(?:\\\\|/)+` : `/+`;
+  const sepMaybe = os == "windows" ? `(?:\\\\|/)*` : `/*`;
   const seps = os == "windows" ? ["\\", "/"] : ["/"];
-  const sepRaw = os == "windows" ? `\\` : `/`;
   const globstar = os == "windows"
-    ? `(?:[^\\\\/]*(?:\\\\|\\/|$)+)*`
-    : `(?:[^/]*(?:\\/|$)+)*`;
+    ? `(?:[^\\\\/]*(?:\\\\|/|$)+)*`
+    : `(?:[^/]*(?:/|$)+)*`;
   const wildcard = os == "windows" ? `[^\\\\/]*` : `[^/]*`;
 
   // Keep track of scope for extended syntaxes.
@@ -50,19 +49,15 @@ export function globToRegExp(
   for (; newLength > 0 && seps.includes(glob[newLength - 1]); newLength--);
   glob = glob.slice(0, newLength);
 
-  let c, n;
   for (let i = 0; i < glob.length; i++) {
-    c = glob[i];
-    n = glob[i + 1];
-
-    if (seps.includes(c)) {
+    if (seps.includes(glob[i])) {
       regExpString += sep;
       while (seps.includes(glob[i + 1])) i++;
       continue;
     }
 
-    if (c == "[") {
-      if (inRange && n == ":") {
+    if (glob[i] == "[") {
+      if (inRange && glob[i + 1] == ":") {
         i++; // skip [
         let value = "";
         while (glob[++i] !== ":") value += glob[i];
@@ -70,63 +65,64 @@ export function globToRegExp(
         else if (value == "space") regExpString += "\\s";
         else if (value == "digit") regExpString += "\\d";
         i++; // skip last ]
-        continue;
+      } else {
+        inRange = true;
+        regExpString += "[";
       }
-      inRange = true;
-      regExpString += c;
       continue;
     }
 
-    if (c == "]") {
+    if (glob[i] == "]") {
       inRange = false;
-      regExpString += c;
+      regExpString += "]";
       continue;
     }
 
-    if (c == "!") {
+    if (glob[i] == "!") {
       if (inRange) {
         if (glob[i - 1] == "[") {
           regExpString += "^";
           continue;
         }
       } else if (extended) {
-        if (n == "(") {
-          extStack.push(c);
+        if (glob[i + 1] == "(") {
+          extStack.push("!");
           regExpString += "(?!";
           i++;
-          continue;
+        } else {
+          regExpString += "\\!";
         }
-        regExpString += `\\${c}`;
         continue;
       } else {
-        regExpString += `\\${c}`;
+        regExpString += "\\!";
         continue;
       }
     }
 
     if (inRange) {
-      if (c == "\\" || c == "^" && glob[i - 1] == "[") regExpString += `\\${c}`;
-      else regExpString += c;
+      if (glob[i] == "\\" || glob[i] == "^" && glob[i - 1] == "[") {
+        regExpString += `\\${glob[i]}`;
+      } else regExpString += glob[i];
       continue;
     }
 
-    if (["\\", "$", "^", ".", "="].includes(c)) {
-      regExpString += `\\${c}`;
+    if (["\\", "$", "^", ".", "="].includes(glob[i])) {
+      regExpString += `\\${glob[i]}`;
       continue;
     }
 
-    if (c == "(") {
+    if (glob[i] == "(") {
       if (extStack.length) {
-        regExpString += `${c}?:`;
+        regExpString += "(?:";
         continue;
       }
-      regExpString += `\\${c}`;
+      regExpString += "\\(";
       continue;
     }
 
-    if (c == ")") {
+    if (glob[i] == ")") {
       if (extStack.length) {
-        regExpString += c;
+        regExpString += ")";
         const type = extStack.pop()!;
         if (type == "@") {
           regExpString += "{1}";
@@ -135,101 +131,91 @@ export function globToRegExp(
         } else {
           regExpString += type;
         }
-        continue;
+      } else {
+        regExpString += "\\)";
       }
-      regExpString += `\\${c}`;
       continue;
     }
 
-    if (c == "|") {
+    if (glob[i] == "|") {
       if (extStack.length) {
-        regExpString += c;
-        continue;
+        regExpString += "|";
+      } else {
+        regExpString += "\\|";
       }
-      regExpString += `\\${c}`;
       continue;
     }
 
-    if (c == "+") {
-      if (n == "(" && extended) {
-        extStack.push(c);
-        continue;
+    if (glob[i] == "+") {
+      if (extended && glob[i + 1] == "(") {
+        extStack.push("+");
+      } else {
+        regExpString += "\\+";
       }
-      regExpString += `\\${c}`;
       continue;
     }
 
-    if (c == "@" && extended) {
-      if (n == "(") {
-        extStack.push(c);
-        continue;
-      }
+    if (extended && glob[i] == "@" && glob[i + 1] == "(") {
+      extStack.push("@");
+      continue;
     }
 
-    if (c == "?") {
-      if (extended) {
-        if (n == "(") {
-          extStack.push(c);
-        }
-        continue;
+    if (glob[i] == "?") {
+      if (extended && glob[i + 1] == "(") {
+        extStack.push("?");
       } else {
         regExpString += ".";
-        continue;
       }
+      continue;
     }
 
-    if (c == "{") {
+    if (glob[i] == "{") {
       inGroup = true;
       regExpString += "(?:";
       continue;
     }
 
-    if (c == "}") {
+    if (glob[i] == "}") {
       inGroup = false;
       regExpString += ")";
       continue;
     }
 
-    if (c == ",") {
+    if (glob[i] == ",") {
       if (inGroup) {
         regExpString += "|";
-        continue;
-      }
-      regExpString += `\\${c}`;
-      continue;
-    }
-
-    if (c == "*") {
-      if (n == "(" && extended) {
-        extStack.push(c);
-        continue;
-      }
-      // Move over all consecutive "*"'s.
-      // Also store the previous and next characters
-      const prevChar = glob[i - 1];
-      let starCount = 1;
-      while (glob[i + 1] == "*") {
-        starCount++;
-        i++;
-      }
-      const nextChar = glob[i + 1];
-      const isGlobstar = globstarOption && starCount > 1 &&
-        // from the start of the segment
-        [sepRaw, "/", undefined].includes(prevChar) &&
-        // to the end of the segment
-        [sepRaw, "/", undefined].includes(nextChar);
-      if (isGlobstar) {
-        // it's a globstar, so match zero or more path segments
-        regExpString += globstar;
-        while (seps.includes(glob[i + 1])) i++;
       } else {
-        // it's not a globstar, so only match one path segment
-        regExpString += wildcard;
+        regExpString += "\\,";
       }
       continue;
     }
 
-    regExpString += c;
+    if (glob[i] == "*") {
+      if (extended && glob[i + 1] == "(") {
+        extStack.push("*");
+      } else {
+        const prevChar = glob[i - 1];
+        let starCount = 1;
+        while (glob[i + 1] == "*") {
+          starCount++;
+          i++;
+        }
+        const nextChar = glob[i + 1];
+        if (
+          globstarOption && starCount > 1 &&
+          [...seps, undefined].includes(prevChar) &&
+          [...seps, undefined].includes(nextChar)
+        ) {
+          regExpString += globstar;
+          while (seps.includes(glob[i + 1])) i++;
+        } else {
+          regExpString += wildcard;
+        }
+      }
+      continue;
+    }
+
+    regExpString += glob[i];
   }
 
   regExpString = `^${regExpString}${regExpString != "" ? sepMaybe : ""}$`;
