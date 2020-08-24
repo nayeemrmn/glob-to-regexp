@@ -61,9 +61,21 @@ export function globToRegExp(
         i++; // skip [
         let value = "";
         while (glob[++i] !== ":") value += glob[i];
-        if (value == "alnum") regExpString += "\\w\\d";
-        else if (value == "space") regExpString += "\\s";
+        if (value == "alnum") regExpString += "\\dA-Za-z";
+        else if (value == "alpha") regExpString += "A-Za-z";
+        else if (value == "ascii") regExpString += "\x00-\x7F";
+        else if (value == "blank") regExpString += "\t ";
+        else if (value == "cntrl") regExpString += "\x00-\x1F\x7F";
         else if (value == "digit") regExpString += "\\d";
+        else if (value == "graph") regExpString += "\x21-\x7E";
+        else if (value == "lower") regExpString += "a-z";
+        else if (value == "print") regExpString += "\x20-\x7E";
+        else if (value == "punct") {
+          regExpString += "!\"#$%&'()*+,\\-./:;<=>?@[\\\\\\]^_‘{|}~";
+        } else if (value == "space") regExpString += "\\s\v";
+        else if (value == "upper") regExpString += "A-Z";
+        else if (value == "word") regExpString += "\\w";
+        else if (value == "xdigit") regExpString += "\\dA-Fa-f";
         i++; // skip last ]
       } else {
         inRange = true;

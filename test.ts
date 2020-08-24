@@ -104,47 +104,54 @@ Deno.test({
       ),
     );
     assert(
-      match(
-        "[[:digit:]]/bar.txt",
-        "1/bar.txt",
-        { extended: false, globstar: false },
-      ),
-    );
-    assert(
-      match(
-        "[[:digit:]b]/bar.txt",
-        "b/bar.txt",
-        { extended: false, globstar: false },
-      ),
-    );
-    assert(
-      match(
-        "[![:digit:]b]/bar.txt",
-        "a/bar.txt",
-        { extended: false, globstar: false },
-      ),
-    );
-    assert(
       !match(
         "[[:alnum:]]/bar.txt",
         "!/bar.txt",
         { extended: false, globstar: false },
       ),
     );
-    assert(
-      !match(
-        "[[:digit:]]/bar.txt",
-        "a/bar.txt",
-        { extended: false, globstar: false },
-      ),
-    );
-    assert(
-      !match(
-        "[[:digit:]b]/bar.txt",
-        "a/bar.txt",
-        { extended: false, globstar: false },
-      ),
-    );
+    for (const c of "09AGZagz") {
+      assert(match("[[:alnum:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "AGZagz") {
+      assert(match("[[:alpha:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "\x00\x20\x7F") {
+      assert(match("[[:ascii:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "\t ") {
+      assert(match("[[:blank:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "\x00\x1F\x7F") {
+      assert(match("[[:cntrl:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "09") {
+      assert(match("[[:digit:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "\x21\x7E") {
+      assert(match("[[:graph:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "az") {
+      assert(match("[[:lower:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "\x20\x7E") {
+      assert(match("[[:print:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "!\"#$%&'()*+,-./:;<=>?@[\\]^_‘{|}~") {
+      assert(match("[[:punct:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "\t\n\v\f\r ") {
+      assert(match("[[:space:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "AZ") {
+      assert(match("[[:upper:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "09AZaz_") {
+      assert(match("[[:word:]]", c, { extended: false, globstar: false }), c);
+    }
+    for (const c of "09AFaf") {
+      assert(match("[[:xdigit:]]", c, { extended: false, globstar: false }), c);
+    }
   },
 });
 
