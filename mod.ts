@@ -57,127 +57,108 @@ export function globToRegExp(
     }
 
     if (glob[i] == "[") {
-      if (inRange && glob[i + 1] == ":") {
-        i++; // skip [
-        let value = "";
-        while (glob[++i] !== ":") value += glob[i];
-        if (value == "alnum") regExpString += "\\dA-Za-z";
-        else if (value == "alpha") regExpString += "A-Za-z";
-        else if (value == "ascii") regExpString += "\x00-\x7F";
-        else if (value == "blank") regExpString += "\t ";
-        else if (value == "cntrl") regExpString += "\x00-\x1F\x7F";
-        else if (value == "digit") regExpString += "\\d";
-        else if (value == "graph") regExpString += "\x21-\x7E";
-        else if (value == "lower") regExpString += "a-z";
-        else if (value == "print") regExpString += "\x20-\x7E";
-        else if (value == "punct") {
-          regExpString += "!\"#$%&'()*+,\\-./:;<=>?@[\\\\\\]^_‘{|}~";
-        } else if (value == "space") regExpString += "\\s\v";
-        else if (value == "upper") regExpString += "A-Z";
-        else if (value == "word") regExpString += "\\w";
-        else if (value == "xdigit") regExpString += "\\dA-Fa-f";
-        i++; // skip last ]
-      } else {
+      if (!inRange) {
         inRange = true;
         regExpString += "[";
+        if (glob[i + 1] == "!") {
+          i++;
+          regExpString += "^";
+        } else if (glob[i + 1] == "^") {
+          i++;
+          regExpString += "\\^";
+        }
+        continue;
+      } else if (glob[i + 1] == ":") {
+        let j = i + 1;
+        let value = "";
+        while (glob[j + 1] != null && glob[j + 1] != ":") {
+          value += glob[j + 1];
+          j++;
+        }
+        if (glob[j + 1] == ":" && glob[j + 2] == "]") {
+          i = j + 2;
+          if (value == "alnum") regExpString += "\\dA-Za-z";
+          else if (value == "alpha") regExpString += "A-Za-z";
+          else if (value == "ascii") regExpString += "\x00-\x7F";
+          else if (value == "blank") regExpString += "\t ";
+          else if (value == "cntrl") regExpString += "\x00-\x1F\x7F";
+          else if (value == "digit") regExpString += "\\d";
+          else if (value == "graph") regExpString += "\x21-\x7E";
+          else if (value == "lower") regExpString += "a-z";
+          else if (value == "print") regExpString += "\x20-\x7E";
+          else if (value == "punct") {
+            regExpString += "!\"#$%&'()*+,\\-./:;<=>?@[\\\\\\]^_‘{|}~";
+          } else if (value == "space") regExpString += "\\s\v";
+          else if (value == "upper") regExpString += "A-Z";
+          else if (value == "word") regExpString += "\\w";
+          else if (value == "xdigit") regExpString += "\\dA-Fa-f";
+          continue;
+        }
       }
-      continue;
     }
 
-    if (glob[i] == "]") {
+    if (glob[i] == "]" && inRange) {
       inRange = false;
       regExpString += "]";
       continue;
     }
 
-    if (glob[i] == "!") {
-      if (inRange) {
-        if (glob[i - 1] == "[") {
-          regExpString += "^";
-          continue;
-        }
-      } else if (extended) {
-        if (glob[i + 1] == "(") {
-          extStack.push("!");
-          regExpString += "(?!";
-          i++;
-        } else {
-          regExpString += "\\!";
-        }
-        continue;
-      } else {
-        regExpString += "\\!";
-        continue;
-      }
-    }
-
     if (inRange) {
-      if (glob[i] == "\\" || glob[i] == "^" && glob[i - 1] == "[") {
-        regExpString += `\\${glob[i]}`;
-      } else regExpString += glob[i];
-      continue;
-    }
-
-    if (["\\", "$", "^", ".", "="].includes(glob[i])) {
-      regExpString += `\\${glob[i]}`;
-      continue;
-    }
-
-    if (glob[i] == "(") {
-      if (extStack.length) {
-        regExpString += "(?:";
-        continue;
-      }
-      regExpString += "\\(";
-      continue;
-    }
-
-    if (glob[i] == ")") {
-      if (extStack.length) {
-        regExpString += ")";
-        const type = extStack.pop()!;
-        if (type == "@") {
-          regExpString += "{1}";
-        } else if (type == "!") {
-          regExpString += wildcard;
-        } else {
-          regExpString += type;
-        }
+      if (glob[i] == "\\") {
+        regExpString += `\\\\`;
       } else {
-        regExpString += "\\)";
+        regExpString += glob[i];
       }
       continue;
     }
 
-    if (glob[i] == "|") {
-      if (extStack.length) {
-        regExpString += "|";
+    if (glob[i] == ")" && extStack.length) {
+      regExpString += ")";
+      const type = extStack.pop()!;
+      if (type == "@") {
+        regExpString += "{1}";
+      } else if (type == "!") {
+        regExpString += wildcard;
       } else {
-        regExpString += "\\|";
+        regExpString += type;
       }
       continue;
     }
 
-    if (glob[i] == "+") {
-      if (extended && glob[i + 1] == "(") {
-        extStack.push("+");
-      } else {
-        regExpString += "\\+";
-      }
+    if (glob[i] == "|" && extStack.length > 0) {
+      regExpString += "|";
       continue;
     }
 
-    if (extended && glob[i] == "@" && glob[i + 1] == "(") {
+    if (glob[i] == "+" && extended && glob[i + 1] == "(") {
+      i++;
+      extStack.push("+");
+      regExpString += "(?:";
+      continue;
+    }
+
+    if (glob[i] == "@" && extended && glob[i + 1] == "(") {
+      i++;
       extStack.push("@");
+      regExpString += "(?:";
       continue;
     }
 
     if (glob[i] == "?") {
       if (extended && glob[i + 1] == "(") {
+        i++;
         extStack.push("?");
+        regExpString += "(?:";
       } else {
         regExpString += ".";
       }
+      continue;
+    }
+
+    if (glob[i] == "!" && extended && glob[i + 1] == "(") {
+      i++;
+      extStack.push("!");
+      regExpString += "(?!";
       continue;
     }
 
@@ -193,28 +174,26 @@ export function globToRegExp(
       continue;
     }
 
-    if (glob[i] == ",") {
-      if (inGroup) {
-        regExpString += "|";
-      } else {
-        regExpString += "\\,";
-      }
+    if (glob[i] == "," && inGroup) {
+      regExpString += "|";
       continue;
     }
 
     if (glob[i] == "*") {
       if (extended && glob[i + 1] == "(") {
+        i++;
         extStack.push("*");
+        regExpString += "(?:";
       } else {
         const prevChar = glob[i - 1];
-        let starCount = 1;
+        let numStars = 1;
         while (glob[i + 1] == "*") {
-          starCount++;
           i++;
+          numStars++;
         }
         const nextChar = glob[i + 1];
         if (
-          globstarOption && starCount > 1 &&
+          globstarOption && numStars == 2 &&
           [...seps, undefined].includes(prevChar) &&
           [...seps, undefined].includes(nextChar)
         ) {
@@ -227,7 +206,12 @@ export function globToRegExp(
       continue;
     }
 
-    regExpString += glob[i];
+    // deno-fmt-ignore
+    if (["!", "$", "(", ")", "*", "+", ",", ".", "=", "?", "\\", "^", "{", "|", "}"].includes(glob[i])) {
+      regExpString += `\\${glob[i]}`;
+    } else {
+      regExpString += glob[i];
+    }
   }
 
   regExpString = `^${regExpString}${regExpString != "" ? sepMaybe : ""}$`;
