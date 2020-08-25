@@ -411,6 +411,19 @@ Deno.test({
 });
 
 Deno.test({
+  name: "globToRegExp() Unclosed groups",
+  fn() {
+    assert(match("{foo,bar", "{foo,bar", { extended: false }));
+    assert(match("?(foo|bar", "?(foo|bar"));
+    assert(match("@(foo|bar", "@(foo|bar"));
+    assert(match("*(foo|bar", "*(foo|bar"));
+    assert(match("+(foo|bar", "+(foo|bar"));
+    assert(match("?({)}", "?({)}"));
+    assert(match("{?(})", "{?(})"));
+  },
+});
+
+Deno.test({
   name: "GlobToRegExpOptions::extended",
   fn() {
     const pattern1 = globToRegExp("?(foo|bar)");

@@ -20,6 +20,9 @@ export interface GlobToRegExpOptions {
   os?: typeof Deno.build.os;
 }
 
+// deno-fmt-ignore
+const regExpEscapeCharacters = ["!", "$", "(", ")", "*", "+", ".", "=", "?", "[", "\\", "^", "{", "|"];
+
 /** Convert a glob string to a regular expressions. */
 export function globToRegExp(
   glob: string,
@@ -34,15 +37,9 @@ export function globToRegExp(
     : `(?:[^/]*(?:/|$)+)*`;
   const wildcard = os == "windows" ? `[^\\\\/]*` : `[^/]*`;
 
-  // Keep track of scope for extended syntaxes.
-  const extStack = [];
-
-  // If we are doing extended matching, this boolean is true when we are inside
-  // a group (eg {*.html,*.js}), and false otherwise.
-  let inGroup = false;
-  let inRange = false;
-
   let regExpString = "";
+  const groupStack = [];
+  let inRange = false;
 
   // Remove trailing separators.
   let newLength = glob.length;
@@ -112,34 +109,38 @@ export function globToRegExp(
       continue;
     }
 
-    if (glob[i] == ")" && extStack.length) {
+    if (
+      glob[i] == ")" && groupStack.length > 0 &&
+      groupStack[groupStack.length - 1] != "BRACE"
+    ) {
       regExpString += ")";
-      const type = extStack.pop()!;
-      if (type == "@") {
-        regExpString += "{1}";
-      } else if (type == "!") {
+      const type = groupStack.pop()!;
+      if (type == "!") {
         regExpString += wildcard;
-      } else {
+      } else if (type != "@") {
         regExpString += type;
       }
       continue;
     }
 
-    if (glob[i] == "|" && extStack.length > 0) {
+    if (
+      glob[i] == "|" && groupStack.length > 0 &&
+      groupStack[groupStack.length - 1] != "BRACE"
+    ) {
       regExpString += "|";
       continue;
     }
 
     if (glob[i] == "+" && extended && glob[i + 1] == "(") {
       i++;
-      extStack.push("+");
+      groupStack.push("+");
       regExpString += "(?:";
       continue;
     }
 
     if (glob[i] == "@" && extended && glob[i + 1] == "(") {
       i++;
-      extStack.push("@");
+      groupStack.push("@");
       regExpString += "(?:";
       continue;
     }
@@ -147,7 +148,7 @@ export function globToRegExp(
     if (glob[i] == "?") {
       if (extended && glob[i + 1] == "(") {
         i++;
-        extStack.push("?");
+        groupStack.push("?");
         regExpString += "(?:";
       } else {
         regExpString += ".";
@@ -157,24 +158,24 @@ export function globToRegExp(
 
     if (glob[i] == "!" && extended && glob[i + 1] == "(") {
       i++;
-      extStack.push("!");
+      groupStack.push("!");
       regExpString += "(?!";
       continue;
     }
 
     if (glob[i] == "{") {
-      inGroup = true;
+      groupStack.push("BRACE");
       regExpString += "(?:";
       continue;
     }
 
-    if (glob[i] == "}") {
-      inGroup = false;
+    if (glob[i] == "}" && groupStack[groupStack.length - 1] == "BRACE") {
+      groupStack.pop();
       regExpString += ")";
       continue;
     }
 
-    if (glob[i] == "," && inGroup) {
+    if (glob[i] == "," && groupStack[groupStack.length - 1] == "BRACE") {
       regExpString += "|";
       continue;
     }
@@ -182,7 +183,7 @@ export function globToRegExp(
     if (glob[i] == "*") {
       if (extended && glob[i + 1] == "(") {
         i++;
-        extStack.push("*");
+        groupStack.push("*");
         regExpString += "(?:";
       } else {
         const prevChar = glob[i - 1];
@@ -206,14 +207,19 @@ export function globToRegExp(
       continue;
     }
 
-    // deno-fmt-ignore
-    if (["!", "$", "(", ")", "*", "+", ",", ".", "=", "?", "\\", "^", "{", "|", "}"].includes(glob[i])) {
-      regExpString += `\\${glob[i]}`;
-    } else {
-      regExpString += glob[i];
+    regExpString += regExpEscapeCharacters.includes(glob[i])
+      ? `\\${glob[i]}`
+      : glob[i];
+  }
+
+  if (groupStack.length > 0 || inRange) {
+    regExpString = "";
+    for (const c of glob) {
+      regExpString += regExpEscapeCharacters.includes(c) ? `\\${c}` : c;
     }
   }
 
-  regExpString = `^${regExpString}${regExpString != "" ? sepMaybe : ""}$`;
+  regExpString += regExpString != "" ? sepMaybe : "";
+  regExpString = `^${regExpString}$`;
   return new RegExp(regExpString);
 }
