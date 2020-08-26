@@ -1,7 +1,3 @@
-// This module is ported from
-// https://github.com/denoland/deno/blob/v1.2.2/std/path/glob.ts.
-// Copyright 2018 Terkel Gjervig Nielsen. All rights reserved. MIT license.
-// Copyright 2018-2020 the Deno authors. All rights reserved. MIT license.
 // Copyright 2020 Nayeem Rahman. All rights reserved. MIT license.
 // This module is browser compatible.
 
