@@ -29,6 +29,10 @@ export function globToRegExp(
   { extended = true, globstar: globstarOption = true, os = nativeOs }:
     GlobToRegExpOptions = {},
 ): RegExp {
+  if (glob == "") {
+    return /(?!)/;
+  }
+
   const sep = os == "windows" ? `(?:\\\\|/)+` : `/+`;
   const sepMaybe = os == "windows" ? `(?:\\\\|/)*` : `/*`;
   const seps = os == "windows" ? ["\\", "/"] : ["/"];

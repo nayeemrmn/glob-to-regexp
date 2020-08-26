@@ -39,7 +39,14 @@ function match(
 Deno.test({
   name: "globToRegExp() Basic RegExp",
   fn(): void {
-    assertEquals(globToRegExp(""), /^$/);
+    assertEquals(globToRegExp("*.js", { os: "linux" }), /^[^/]*\.js\/*$/);
+  },
+});
+
+Deno.test({
+  name: "globToRegExp() Empty glob",
+  fn(): void {
+    assertEquals(globToRegExp(""), /(?!)/);
     assertEquals(globToRegExp("*.js", { os: "linux" }), /^[^/]*\.js\/*$/);
   },
 });
