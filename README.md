@@ -2,6 +2,11 @@
 
 Convert glob strings to regular expressions.
 
+[![ci](https://github.com/nayeemrmn/glob-to-regexp/workflows/ci/badge.svg)](https://github.com/nayeemrmn/glob-to-regexp)
+[![deno doc](https://doc.deno.land/badge.svg)](https://doc.deno.land/https/raw.githubusercontent.com/nayeemrmn/glob-to-regexp/main/mod.ts)
+
+Tested with Deno v1.3.1.
+
 ## Usage
 
 ```ts
