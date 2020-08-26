@@ -17,7 +17,8 @@ export interface GlobToRegExpOptions {
 }
 
 // deno-fmt-ignore
-const regExpEscapeCharacters = ["!", "$", "(", ")", "*", "+", ".", "=", "?", "[", "\\", "^", "{", "|"];
+const regExpEscapeChars = ["!", "$", "(", ")", "*", "+", ".", "=", "?", "[", "\\", "^", "{", "|"];
+const rangeEscapeChars = ["-", "\\", "]"];
 
 /** Convert a glob string to a regular expressions. */
 export function globToRegExp(
@@ -29,13 +30,14 @@ export function globToRegExp(
     return /(?!)/;
   }
 
-  const sep = os == "windows" ? `(?:\\\\|/)+` : `/+`;
-  const sepMaybe = os == "windows" ? `(?:\\\\|/)*` : `/*`;
+  const sep = os == "windows" ? "(?:\\\\|/)+" : "/+";
+  const sepMaybe = os == "windows" ? "(?:\\\\|/)*" : "/*";
   const seps = os == "windows" ? ["\\", "/"] : ["/"];
   const globstar = os == "windows"
-    ? `(?:[^\\\\/]*(?:\\\\|/|$)+)*`
-    : `(?:[^/]*(?:/|$)+)*`;
-  const wildcard = os == "windows" ? `[^\\\\/]*` : `[^/]*`;
+    ? "(?:[^\\\\/]*(?:\\\\|/|$)+)*"
+    : "(?:[^/]*(?:/|$)+)*";
+  const wildcard = os == "windows" ? "[^\\\\/]*" : "[^/]*";
+  const escapePrefix = os == "windows" ? "`" : "\\";
 
   // Remove trailing separators.
   let newLength = glob.length;
@@ -49,11 +51,24 @@ export function globToRegExp(
     let segment = "";
     const groupStack = [];
     let inRange = false;
+    let inEscape = false;
     let endsWithSep = false;
     let i = j;
 
     // Terminates with `i` at the non-inclusive end of the current segment.
     for (; i < glob.length && !seps.includes(glob[i]); i++) {
+      if (inEscape) {
+        inEscape = false;
+        const escapeChars = inRange ? rangeEscapeChars : regExpEscapeChars;
+        segment += escapeChars.includes(glob[i]) ? `\\${glob[i]}` : glob[i];
+        continue;
+      }
+
+      if (glob[i] == escapePrefix) {
+        inEscape = true;
+        continue;
+      }
+
       if (glob[i] == "[") {
         if (!inRange) {
           inRange = true;
@@ -208,17 +223,15 @@ export function globToRegExp(
         continue;
       }
 
-      segment += regExpEscapeCharacters.includes(glob[i])
-        ? `\\${glob[i]}`
-        : glob[i];
+      segment += regExpEscapeChars.includes(glob[i]) ? `\\${glob[i]}` : glob[i];
     }
 
-    // Check for unclosed groups.
-    if (groupStack.length > 0 || inRange) {
+    // Check for unclosed groups or a dangling backslash.
+    if (groupStack.length > 0 || inRange || inEscape) {
       // Parse failure. Take all characters from this segment literally.
       segment = "";
       for (const c of glob.slice(j, i)) {
-        segment += regExpEscapeCharacters.includes(c) ? `\\${c}` : c;
+        segment += regExpEscapeChars.includes(c) ? `\\${c}` : c;
         endsWithSep = false;
       }
     }

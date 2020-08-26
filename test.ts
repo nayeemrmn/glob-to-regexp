@@ -375,8 +375,11 @@ Deno.test({
   name: "globToRegExp() Special RegExp characters in range",
   fn(): void {
     // Excluding characters checked in the previous test.
-    assertEquals(globToRegExp("[\\$^.=]", { os: "linux" }), /^[\\$^.=]\/*$/);
-    assertEquals(globToRegExp("[!\\$^.=]", { os: "linux" }), /^[^\\$^.=]\/*$/);
+    assertEquals(globToRegExp("[\\\\$^.=]", { os: "linux" }), /^[\\$^.=]\/*$/);
+    assertEquals(
+      globToRegExp("[!\\\\$^.=]", { os: "linux" }),
+      /^[^\\$^.=]\/*$/,
+    );
     assertEquals(globToRegExp("[^^]", { os: "linux" }), /^[\^^]\/*$/);
   },
 });
@@ -420,13 +423,47 @@ Deno.test({
 Deno.test({
   name: "globToRegExp() Unclosed groups",
   fn() {
-    assert(match("{foo,bar}/{foo,bar", "foo/{foo,bar", { extended: false }));
+    assert(match("{foo,bar}/[ab", "foo/[ab"));
+    assert(match("{foo,bar}/{foo,bar", "foo/{foo,bar"));
     assert(match("{foo,bar}/?(foo|bar", "foo/?(foo|bar"));
     assert(match("{foo,bar}/@(foo|bar", "foo/@(foo|bar"));
     assert(match("{foo,bar}/*(foo|bar", "foo/*(foo|bar"));
     assert(match("{foo,bar}/+(foo|bar", "foo/+(foo|bar"));
+    assert(match("{foo,bar}/!(foo|bar", "foo/!(foo|bar"));
     assert(match("{foo,bar}/?({)}", "foo/?({)}"));
     assert(match("{foo,bar}/{?(})", "foo/{?(})"));
+  },
+});
+
+Deno.test({
+  name: "globToRegExp() Escape glob characters",
+  fn() {
+    assert(match("\\[ab]", "[ab]", { os: "linux" }));
+    assert(match("`[ab]", "[ab]", { os: "windows" }));
+    assert(match("\\{foo,bar}", "{foo,bar}", { os: "linux" }));
+    assert(match("`{foo,bar}", "{foo,bar}", { os: "windows" }));
+    assert(match("\\?(foo|bar)", "?(foo|bar)", { os: "linux" }));
+    assert(match("`?(foo|bar)", "?(foo|bar)", { os: "windows" }));
+    assert(match("\\@(foo|bar)", "@(foo|bar)", { os: "linux" }));
+    assert(match("`@(foo|bar)", "@(foo|bar)", { os: "windows" }));
+    assert(match("\\*(foo|bar)", "*(foo|bar)", { os: "linux" }));
+    assert(match("`*(foo|bar)", "*(foo|bar)", { os: "windows" }));
+    assert(match("\\+(foo|bar)", "+(foo|bar)", { os: "linux" }));
+    assert(match("`+(foo|bar)", "+(foo|bar)", { os: "windows" }));
+    assert(match("\\!(foo|bar)", "!(foo|bar)", { os: "linux" }));
+    assert(match("`!(foo|bar)", "!(foo|bar)", { os: "windows" }));
+    assert(match("@\\(foo|bar)", "@(foo|bar)", { os: "linux" }));
+    assert(match("@`(foo|bar)", "@(foo|bar)", { os: "windows" }));
+    assert(match("{foo,bar}/[ab]\\", "foo/[ab]\\", { os: "linux" }));
+    assert(match("{foo,bar}/[ab]`", "foo/[ab]`", { os: "windows" }));
+  },
+});
+
+Deno.test({
+  name: "globToRegExp() Dangling escape prefix",
+  fn() {
+    assert(match("{foo,bar}/[ab]\\", "foo/[ab]\\", { os: "linux" }));
+    assert(match("{foo,bar}/[ab]`", "foo/[ab]`", { os: "windows" }));
   },
 });
 
