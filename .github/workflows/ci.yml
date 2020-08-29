@@ -3,6 +3,9 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        kind: [test, lint, format]
     steps:
       - name: Clone repository
         uses: actions/checkout@v1
@@ -12,11 +15,14 @@ jobs:
         with:
           deno-version: v1.3.1
 
-      - name: Format check
+      - name: Format
+        if: matrix.kind == 'format'
         run: deno fmt --check
 
       - name: Lint
+        if: matrix.kind == 'lint'
         run: deno lint --unstable
 
       - name: Test
+        if: matrix.kind == 'test'
         run: deno test --lock lock.json
