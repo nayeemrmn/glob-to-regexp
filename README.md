@@ -3,14 +3,14 @@
 Convert glob strings to regular expressions.
 
 [![ci](https://github.com/nayeemrmn/glob-to-regexp/workflows/ci/badge.svg)](https://github.com/nayeemrmn/glob-to-regexp)
-[![deno doc](https://doc.deno.land/badge.svg)](https://doc.deno.land/https/raw.githubusercontent.com/nayeemrmn/glob-to-regexp/v0.4.0/mod.ts)
+[![deno doc](https://doc.deno.land/badge.svg)](https://doc.deno.land/https/raw.githubusercontent.com/nayeemrmn/glob-to-regexp/v0.4.1/mod.ts)
 
-Tested with Deno v1.3.2.
+Tested with Deno v1.4.0.
 
 ## Usage
 
 ```ts
-import { globToRegExp } from "https://raw.githubusercontent.com/nayeemrmn/glob-to-regexp/v0.4.0/mod.ts";
+import { globToRegExp } from "https://raw.githubusercontent.com/nayeemrmn/glob-to-regexp/v0.4.1/mod.ts";
 
 const pattern1 = globToRegExp("**/?(foo|bar)");
 console.log("foo".match(pattern1) != null); // true
