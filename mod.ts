@@ -66,7 +66,14 @@ const rangeEscapeChars = ["-", "\\", "]"];
  *   first segment ends with an unclosed group.
  * - If a path segment ends with unclosed groups or a dangling escape prefix, a
  *   parse error has occured. Every character for that segment is taken
- *   literally in this event. */
+ *   literally in this event.
+ *
+ * Limitations:
+ * - A negative group like `!(foo|bar)` will wrongly be converted to a negative
+ *   look-ahead followed by a wildcard. This means that `!(foo).js` will wrongly
+ *   fail to match `foobar.js`, even though `foobar` is not `foo`. Effectively,
+ *   `!(foo|bar)` is treated like `!(@(foo|bar)*)`. This will work correctly if
+ *   the group occurs not nested at the end of the segment. */
 export function globToRegExp(
   glob: string,
   { extended = true, globstar: globstarOption = true, os = nativeOs }:
