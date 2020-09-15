@@ -13,7 +13,7 @@ jobs:
       - name: Install Deno
         uses: denolib/setup-deno@v2
         with:
-          deno-version: v1.3.2
+          deno-version: v1.4.0
 
       - name: Format
         if: matrix.kind == 'format'
